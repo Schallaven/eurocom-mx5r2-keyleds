@@ -1,4 +1,4 @@
 #!/bin/bash
 
-install -m644 eurocom-mx5r2-keyleds.ko /lib/modules/$(uname -r)/extra
+install -m644 eurocom-mx5r2-keyleds.ko /lib/modules/$(uname -r)/extra/
 depmod

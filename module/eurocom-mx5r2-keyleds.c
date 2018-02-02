@@ -127,24 +127,26 @@ static char* keyboard_mode_description[] = {
 /* Method for sending the command to the wmbb method of the PNP0C14-interface; see dsdt for details */
 static int wmi_evaluate_wmbb_method(u32 method_id, u32 arg, u32 *retval) {
     /* These structures are expected by the wmbb methods for input and output */
+	union acpi_object obj;
 	struct acpi_buffer in  = { (acpi_size) sizeof(arg), &arg };
-	struct acpi_buffer out = { ACPI_ALLOCATE_BUFFER, NULL };
-	union acpi_object *obj;
+	struct acpi_buffer out = { sizeof(obj), &obj };
+	
 	acpi_status status;
 
 	u32 tmp;
 
-    EUROCOM_DEBUG("called %0#4x with arg %0#6x\n", method_id, arg);
+    EUROCOM_DEBUG("called %0#4x with arg %0#6x\n", method_id, arg);	
 
-	status = wmi_evaluate_method(EUROCOM_MX5R2_GUID, 0x01,
-		method_id, &in, &out);
+	status = wmi_evaluate_method(EUROCOM_MX5R2_GUID, 0x00, method_id, &in, &out);
 
-	if (unlikely(ACPI_FAILURE(status)))
+	if (unlikely(ACPI_FAILURE(status))) {
+		EUROCOM_ERROR("called %0#4x with arg %0#6x\n", method_id, arg);
+		EUROCOM_ERROR("ACPI_FAILURE in wmi_evaluate_method. Returned: 0x%04X\n", status);
 		goto exit;
+	}
 
-	obj = (union acpi_object *) out.pointer;
-	if (obj && obj->type == ACPI_TYPE_INTEGER)
-			tmp = (u32) obj->integer.value;
+	if (obj.type == ACPI_TYPE_INTEGER)
+			tmp = (u32) obj.integer.value;
 	else
 			tmp = 0;
 
@@ -152,8 +154,6 @@ static int wmi_evaluate_wmbb_method(u32 method_id, u32 arg, u32 *retval) {
 
 	if (likely(retval))
 			*retval = tmp;
-
-	kfree(obj);
 
 exit:
 	if (unlikely(ACPI_FAILURE(status)))
@@ -513,7 +513,8 @@ module_exit(mx5r2_wmi_exit);
 MODULE_AUTHOR("Sven Kochmann");
 MODULE_DESCRIPTION("Eurocom MX5 R2 WMI driver for controlling the keyboard LEDs");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("1.0.0");
+MODULE_VERSION("1.1.0");
+MODULE_ALIAS("wmi:"EUROCOM_MX5R2_GUID);
 
 
 
